@@ -1,8 +1,15 @@
 hr {
     font-size: 18px;
 }
-
+/*
 #item {
     border: 1px;
     border-style: solid;
+}
+*/
+
+
+#item img {
+    max-width: 100%;
+    height: auto;
 }

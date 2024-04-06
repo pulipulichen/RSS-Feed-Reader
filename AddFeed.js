@@ -1,5 +1,6 @@
-document.getElementById("confirmButton").addEventListener('click', handleConfirm);
-document.getElementById("gotoFeedButton").addEventListener('click', handleGotoFeed);
+// document.getElementById("confirmButton").addEventListener('click', handleConfirm);
+// document.getElementById("gotoFeedButton").addEventListener('click', handleGotoFeed);
+document.getElementById("gotoFeedButtonParameter").addEventListener('click', handleGotoFeedParameter);
 
 function handleConfirm() {
     addFeedURL(document.getElementById("input").value);
@@ -13,6 +14,15 @@ function handleGotoFeed() {
     }
     localStorage.setItem('userFeedURLs', userFeedURLs);
     window.location.href = 'feed.html';
+}
+
+function handleGotoFeedParameter() {
+    // if (userFeedURLs.length == 0) {
+    //     alert("You haven't entered any RSS feeds");
+    //     return;
+    // }
+    // localStorage.setItem('userFeedURLs', userFeedURLs);
+    window.location.href = 'feed_parameter.html?rss=' + encodeURIComponent(document.getElementById("input").value.trim());
 }
 
 function addFeedURL(url) {
