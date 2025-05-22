@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS/Atom Feed Reader</title>
+    <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="custom.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">RSS/Atom Feed Reader</h1>
+        <div class="form-group">
+            <label for="feedInput">Enter RSS/Atom XML:</label>
+            <textarea class="form-control" id="feedInput" rows="10" placeholder="Paste your RSS or Atom XML here..."></textarea>
+        </div>
+        <button class="btn btn-primary mb-4" id="parseButton">Parse Feed</button>
+        <div id="feedOutput" class="border p-3">
+            <!-- Parsed feed content will be displayed here -->
+        </div>
+    </div>
+
+    <script src="lib/jquery/jquery-3.4.1.min.js"></script>
+    <script src="lib/popper/popper.min.js"></script>
+    <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+    <script>
+        document.getElementById('parseButton').addEventListener('click', parseFeed);
+
+        function parseFeed() {
+            const feedInput = document.getElementById('feedInput').value;
+            const feedOutput = document.getElementById('feedOutput');
+            feedOutput.innerHTML = ''; // Clear previous content
+
+            if (!feedInput.trim()) {
+                feedOutput.innerHTML = '<p class="text-danger">Please enter RSS/Atom XML.</p>';
+                return;
+            }
+
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(feedInput, "text/xml");
+
+                // Check for parsing errors
+                const errorNode = xmlDoc.querySelector('parsererror');
+                if (errorNode) {
+                    feedOutput.innerHTML = `<p class="text-danger">Error parsing XML: ${errorNode.textContent}</p>`;
+                    return;
+                }
+
+                // Determine if it's RSS or Atom
+                const isRSS = xmlDoc.querySelector('rss');
+                const isAtom = xmlDoc.querySelector('feed');
+
+                if (isRSS) {
+                    displayRSSFeed(xmlDoc);
+                } else if (isAtom) {
+                    displayAtomFeed(xmlDoc);
+                } else {
+                    feedOutput.innerHTML = '<p class="text-danger">Invalid RSS or Atom format.</p>';
+                }
+
+            } catch (error) {
+                feedOutput.innerHTML = `<p class="text-danger">An unexpected error occurred: ${error.message}</p>`;
+            }
+        }
+
+        function displayRSSFeed(xmlDoc) {
+            const channel = xmlDoc.querySelector('channel');
+            if (!channel) {
+                document.getElementById('feedOutput').innerHTML = '<p class="text-danger">Invalid RSS feed: missing channel.</p>';
+                return;
+            }
+
+            const feedOutput = document.getElementById('feedOutput');
+            let html = `<h2>${channel.querySelector('title')?.textContent || 'No Title'}</h2>`;
+            html += `<p>${channel.querySelector('description')?.textContent || 'No Description'}</p>`;
+            html += `<ul class="list-group">`;
+
+            const items = channel.querySelectorAll('item');
+            items.forEach(item => {
+                const title = item.querySelector('title')?.textContent || 'No Title';
+                const link = item.querySelector('link')?.textContent || '#';
+                const description = item.querySelector('description')?.textContent || 'No Description';
+                const pubDate = item.querySelector('pubDate')?.textContent || 'No Date';
+
+                html += `
+                    <li class="list-group-item mb-3">
+                        <h5><a href="${link}" target="_blank">${title}</a></h5>
+                        <p><small class="text-muted">Published: ${pubDate}</small></p>
+                        <p>${description}</p>
+                    </li>
+                `;
+            });
+            html += `</ul>`;
+            feedOutput.innerHTML = html;
+        }
+
+        function displayAtomFeed(xmlDoc) {
+            const feed = xmlDoc.querySelector('feed');
+            if (!feed) {
+                document.getElementById('feedOutput').innerHTML = '<p class="text-danger">Invalid Atom feed: missing feed element.</p>';
+                return;
+            }
+
+            const feedOutput = document.getElementById('feedOutput');
+            let html = `<h2>${feed.querySelector('title')?.textContent || 'No Title'}</h2>`;
+            html += `<p>${feed.querySelector('subtitle')?.textContent || 'No Subtitle'}</p>`;
+            html += `<ul class="list-group">`;
+
+            const entries = feed.querySelectorAll('entry');
+            entries.forEach(entry => {
+                const title = entry.querySelector('title')?.textContent || 'No Title';
+                const link = entry.querySelector('link[rel="alternate"]')?.getAttribute('href') || entry.querySelector('link')?.getAttribute('href') || '#';
+                const summary = entry.querySelector('summary')?.textContent || entry.querySelector('content')?.textContent || 'No Summary/Content';
+                const updated = entry.querySelector('updated')?.textContent || 'No Date';
+
+                html += `
+                    <li class="list-group-item mb-3">
+                        <h5><a href="${link}" target="_blank">${title}</a></h5>
+                        <p><small class="text-muted">Updated: ${updated}</small></p>
+                        <p>${summary}</p>
+                    </li>
+                `;
+            });
+            html += `</ul>`;
+            feedOutput.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
