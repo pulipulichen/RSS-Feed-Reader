@@ -6,6 +6,7 @@
     <title>RSS/Atom Feed Reader</title>
     <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="custom.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
     <div class="container mt-5">
@@ -71,20 +72,23 @@
                 return;
             }
 
+            const items = channel.querySelectorAll('item');
+            let tocHtml = generateTableOfContents(items, 'rss');
+
             const feedOutput = document.getElementById('feedOutput');
             let html = `<h2>${channel.querySelector('title')?.textContent || 'No Title'}</h2>`;
             html += `<p>${channel.querySelector('description')?.textContent || 'No Description'}</p>`;
+            html += tocHtml; // Add TOC here
             html += `<ul class="list-group">`;
 
-            const items = channel.querySelectorAll('item');
-            items.forEach(item => {
+            items.forEach((item, index) => {
                 const title = item.querySelector('title')?.textContent || 'No Title';
                 const link = item.querySelector('link')?.textContent || '#';
                 const description = item.querySelector('description')?.textContent || 'No Description';
                 const pubDate = item.querySelector('pubDate')?.textContent || 'No Date';
 
                 html += `
-                    <li class="list-group-item mb-3">
+                    <li class="list-group-item mb-3" id="item-${index}">
                         <h5><a href="${link}" target="_blank">${title}</a></h5>
                         <p><small class="text-muted">Published: ${pubDate}</small></p>
                         <p>${description}</p>
@@ -93,6 +97,7 @@
             });
             html += `</ul>`;
             feedOutput.innerHTML = html;
+            document.getElementById('toc').classList.add('d-none'); // Hide TOC by default
         }
 
         function displayAtomFeed(xmlDoc) {
@@ -102,20 +107,23 @@
                 return;
             }
 
+            const entries = feed.querySelectorAll('entry');
+            let tocHtml = generateTableOfContents(entries, 'atom');
+
             const feedOutput = document.getElementById('feedOutput');
             let html = `<h2>${feed.querySelector('title')?.textContent || 'No Title'}</h2>`;
             html += `<p>${feed.querySelector('subtitle')?.textContent || 'No Subtitle'}</p>`;
+            html += tocHtml; // Add TOC here
             html += `<ul class="list-group">`;
 
-            const entries = feed.querySelectorAll('entry');
-            entries.forEach(entry => {
+            entries.forEach((entry, index) => {
                 const title = entry.querySelector('title')?.textContent || 'No Title';
                 const link = entry.querySelector('link[rel="alternate"]')?.getAttribute('href') || entry.querySelector('link')?.getAttribute('href') || '#';
                 const summary = entry.querySelector('summary')?.textContent || entry.querySelector('content')?.textContent || 'No Summary/Content';
                 const updated = entry.querySelector('updated')?.textContent || 'No Date';
 
                 html += `
-                    <li class="list-group-item mb-3">
+                    <li class="list-group-item mb-3" id="item-${index}">
                         <h5><a href="${link}" target="_blank">${title}</a></h5>
                         <p><small class="text-muted">Updated: ${updated}</small></p>
                         <p>${summary}</p>
@@ -124,7 +132,57 @@
             });
             html += `</ul>`;
             feedOutput.innerHTML = html;
+            document.getElementById('toc').classList.add('d-none'); // Hide TOC by default
         }
+
+        function generateTableOfContents(items, type) {
+            let toc = '<div id="toc" class="mb-4">';
+            toc += '<h4>Table of Contents</h4>';
+            toc += '<ul class="list-unstyled">';
+            items.forEach((item, index) => {
+                const title = type === 'rss' ? item.querySelector('title')?.textContent : item.querySelector('title')?.textContent;
+                toc += `<li><a href="#item-${index}">${title || 'No Title'}</a></li>`;
+            });
+            toc += '</ul>';
+            toc += '</div>';
+            return toc;
+        }
+
+        // Floating buttons functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const feedOutput = document.getElementById('feedOutput');
+            const toggleTocBtn = document.createElement('button');
+            toggleTocBtn.className = 'btn btn-info floating-btn toggle-toc-btn';
+            toggleTocBtn.innerHTML = '<i class="fas fa-list"></i>'; // FontAwesome icon for list
+            toggleTocBtn.title = 'Toggle Table of Contents';
+            document.body.appendChild(toggleTocBtn);
+
+            const scrollToTopBtn = document.createElement('button');
+            scrollToTopBtn.className = 'btn btn-secondary floating-btn scroll-to-top-btn';
+            scrollToTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>'; // FontAwesome icon for arrow up
+            scrollToTopBtn.title = 'Scroll to Top';
+            document.body.appendChild(scrollToTopBtn);
+
+            toggleTocBtn.addEventListener('click', () => {
+                const toc = document.getElementById('toc');
+                if (toc) {
+                    toc.classList.toggle('d-none');
+                }
+            });
+
+            scrollToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // Show/hide scroll-to-top button based on scroll position
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 200) {
+                    scrollToTopBtn.style.display = 'block';
+                } else {
+                    scrollToTopBtn.style.display = 'none';
+                }
+            });
+        });
     </script>
 </body>
 </html>
